@@ -1,0 +1,51 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: redis
+spec:
+  replicas: 6
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: local:kubernetes-replicated-redis-cluster-auto-restart
+        imagePullPolicy: IfNotPresent # For local testing
+        resources:
+          limits:
+            cpu: 100m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        ports:
+        - containerPort: 6379
+          name: client
+        - containerPort: 16379
+          name: gossip
+        command: [ "/docker-entrypoint.sh" ]
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "redis-cli -h $(hostname) -p 6379 ping"
+          initialDelaySeconds: 20
+          periodSeconds: 3
+        env:
+        - name: POD_NAMESPACE
+          value: default
+        - name: APISERVER
+          value: "https://192.168.64.2:8443"
+        - name: TOKEN
+          value: ""
+          # the number of REDIS_CLUSTER_COUNT should be the same as the number of replicas
+        - name: REDIS_CLUSTER_COUNT
+          value: "6"
+        - name: REDIS_CLUSTER_REPLICA
+          value: "1"
+          # the REDIS_CLUSTER_PORT should be the same as the livenessProbe ping port, and container port
+        - name: REDIS_CLUSTER_PORT
+          value: "6379"
