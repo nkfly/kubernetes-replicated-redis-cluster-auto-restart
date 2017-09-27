@@ -1,0 +1,1 @@
+# kubernetes-replicated-redis-cluster-auto-restart
